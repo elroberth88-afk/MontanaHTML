@@ -26,6 +26,10 @@ st.markdown("""
         background-color: #E57373 !important;
         color: black !important;
     }
+    /* Ocultar elementos por defecto de Streamlit para un look más limpio */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -74,16 +78,24 @@ def init_db():
 init_db()
 
 # --- Interfaz de Usuario ---
-st.title("💎 Montana Club")
+# 1. Cargamos tu logo en la barra lateral superior
+try:
+    st.sidebar.image("logo_montana.jpeg", use_container_width=True)
+except Exception as e:
+    st.sidebar.warning("⚠️ No se encontró la imagen 'logo_montana.jpeg'.")
 
+# 2. Menú fijo usando radio
 menu = ["+ Nueva Venta", "💰 Historial Ventas", "📦 Inventario", "🏧 Caja (Hoy)"]
-choice = st.sidebar.selectbox("Menú", menu)
+choice = st.sidebar.radio("Navegación", menu)
+
+# Título limpio que cambia según la sección
+titulo_seccion = choice.split(' ', 1)[1] if ' ' in choice else choice
+st.title(titulo_seccion)
 
 # ==========================================
 # 1. NUEVA VENTA
 # ==========================================
 if choice == "+ Nueva Venta":
-    st.markdown("### Registrar Nueva Venta")
     
     conn = get_connection()
     df_prod = pd.read_sql("SELECT nombre, precio_venta, stock, costo FROM productos", conn)
@@ -129,7 +141,6 @@ if choice == "+ Nueva Venta":
 # 2. HISTORIAL DE VENTAS
 # ==========================================
 elif choice == "💰 Historial Ventas":
-    st.markdown("### Historial de Ventas")
     
     conn = get_connection()
     df_ventas = pd.read_sql("SELECT id, timestamp, producto_nombre, cantidad, total, metodo_pago FROM ventas ORDER BY timestamp DESC", conn)
@@ -165,7 +176,6 @@ elif choice == "💰 Historial Ventas":
 # 3. INVENTARIO
 # ==========================================
 elif choice == "📦 Inventario":
-    st.markdown("### Gestión de Inventario")
     
     tab1, tab2, tab3 = st.tabs(["Listado", "Agregar Producto", "Editar / Eliminar"])
     
@@ -234,7 +244,7 @@ elif choice == "📦 Inventario":
 # 4. CAJA HOY
 # ==========================================
 elif choice == "🏧 Caja (Hoy)":
-    st.markdown("### Resumen de Caja (Solo Hoy)")
+    
     hoy = datetime.now().strftime("%Y-%m-%d")
     
     conn = get_connection()
