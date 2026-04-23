@@ -74,10 +74,15 @@ def init_db():
 init_db()
 
 # --- Interfaz de Usuario ---
-st.title("💎 Montana Club")
+# 1. Cargamos tu logo en la barra lateral superior
+st.sidebar.image("logo_montana.jpeg", use_container_width=True)
+
+# 2. Un título sobrio para el área principal
+st.title("Panel de Control")
 
 menu = ["+ Nueva Venta", "💰 Historial Ventas", "📦 Inventario", "🏧 Caja (Hoy)"]
-choice = st.sidebar.selectbox("Menú", menu)
+# 3. Usamos 'radio' en lugar de 'selectbox' para que el menú quede fijo y desplegado
+choice = st.sidebar.radio("Navegación", menu)
 
 # ==========================================
 # 1. NUEVA VENTA
