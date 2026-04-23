@@ -79,13 +79,13 @@ init_db()
 
 # --- Interfaz de Usuario ---
 # 1. Cargamos tu logo en la barra lateral superior
-try:
-    st.sidebar.image("logo_montana.jpeg", use_container_width=True)
-except Exception as e:
-    st.sidebar.warning("⚠️ No se encontró la imagen 'logo_montana.jpeg'.")
+st.sidebar.image("logo_montana.jpeg", use_container_width=True)
 
-# 2. Menú fijo usando radio
+# 2. Un título sobrio para el área principal
+st.title("Panel de Control")
+
 menu = ["+ Nueva Venta", "💰 Historial Ventas", "📦 Inventario", "🏧 Caja (Hoy)"]
+# 3. Usamos 'radio' en lugar de 'selectbox' para que el menú quede fijo y desplegado
 choice = st.sidebar.radio("Navegación", menu)
 
 # Título limpio que cambia según la sección
