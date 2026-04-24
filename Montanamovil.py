@@ -16,7 +16,7 @@ def get_base64(bin_file):
 # --- Estilo Custom (Scarface Edition) ---
 try:
     # Asegúrate de que el archivo se llame exactamente así en tu carpeta
-    img_base64 = get_base64('tonysillon.jepg')
+    img_base64 = get_base64('tonysillon.jpeg')
     
     st.markdown(f"""
         <style>
