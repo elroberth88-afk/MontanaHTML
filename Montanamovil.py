@@ -2,32 +2,70 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
+import base64
 
 # --- Configuración de la Página ---
 st.set_page_config(page_title="Montana Club Mobile", layout="centered", initial_sidebar_state="expanded")
 
-# --- Estilo Custom (Quiet Luxury) ---
-st.markdown("""
-    <style>
-    .stApp {
-        background-color: #0F0D0B;
-        color: #F0EDE6;
-    }
-    /* Botones principales */
-    div.stButton > button[kind="primary"] {
-        background-color: #5ECFA0;
-        color: black;
-        border-radius: 8px;
-        font-weight: bold;
-        border: none;
-    }
-    /* Botones de peligro (Eliminar) */
-    .btn-peligro > div > button {
-        background-color: #E57373 !important;
-        color: black !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# --- Función para cargar la imagen de fondo ---
+def get_base64(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+# --- Estilo Custom (Scarface Edition) ---
+try:
+    # Asegúrate de que el archivo se llame exactamente así en tu carpeta
+    img_base64 = get_base64('tonysillon.jpg')
+    
+    st.markdown(f"""
+        <style>
+        .stApp {{
+            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("data:image/jpg;base64,{img_base64}");
+            background-attachment: fixed;
+            background-size: cover;
+            color: #F0EDE6;
+        }}
+        
+        /* Contenedor principal más legible */
+        .main .block-container {{
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid #333;
+            margin-top: 20px;
+        }}
+
+        /* Sidebar con estilo oscuro */
+        [data-testid="stSidebar"] {{
+            background-color: #0F0D0B;
+        }}
+
+        /* Botones principales */
+        div.stButton > button[kind="primary"] {{
+            background-color: #5ECFA0;
+            color: black;
+            border-radius: 8px;
+            font-weight: bold;
+            border: none;
+            width: 100%;
+        }}
+
+        /* Botones de peligro (Eliminar) */
+        .btn-peligro > div > button {{
+            background-color: #E57373 !important;
+            color: black !important;
+        }}
+
+        /* Estilo de inputs y selects */
+        input, select, textarea {{
+            background-color: #1A1A1A !important;
+            color: white !important;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+except Exception as e:
+    st.error("No se pudo cargar la imagen de fondo. Verifica que 'tonysillon.jpg' esté en la carpeta del proyecto.")
 
 DB_FILE = "montana_club.db"
 
@@ -39,6 +77,7 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
     
+    # Verificación y actualización de columnas
     cursor.execute("PRAGMA table_info(productos)")
     columnas_prod = [info[1] for info in cursor.fetchall()]
     if 'precio' in columnas_prod and 'precio_venta' not in columnas_prod:
@@ -74,14 +113,15 @@ def init_db():
 init_db()
 
 # --- Interfaz de Usuario ---
-# 1. Cargamos tu logo en la barra lateral superior
-st.sidebar.image("logo_montana.jpeg", use_container_width=True)
+# Intentamos cargar el logo, si no existe no rompe la app
+try:
+    st.sidebar.image("logo_montana.jpeg", use_container_width=True)
+except:
+    st.sidebar.title("MONTANA CLUB")
 
-# 2. Un título sobrio para el área principal
 st.title("Panel de Control")
 
 menu = ["+ Nueva Venta", "💰 Historial Ventas", "📦 Inventario", "🏧 Caja (Hoy)"]
-# 3. Usamos 'radio' en lugar de 'selectbox' para que el menú quede fijo y desplegado
 choice = st.sidebar.radio("Navegación", menu)
 
 # ==========================================
@@ -149,7 +189,6 @@ elif choice == "💰 Historial Ventas":
         
         st.markdown('<div class="btn-peligro">', unsafe_allow_html=True)
         if st.button("Anular Venta y Devolver Stock"):
-            # Obtener datos de la venta para devolver stock
             detalles_venta = df_ventas[df_ventas['id'] == venta_a_eliminar].iloc[0]
             cant_devolver = int(detalles_venta['cantidad'])
             prod_devolver = detalles_venta['producto_nombre']
@@ -263,6 +302,6 @@ elif choice == "🏧 Caja (Hoy)":
         st.metric("TOTAL VENTAS BRUTAS", f"${total_ingresos:,.0f}")
         st.metric("Costo de Mercadería", f"- ${costo_total_dia:,.0f}")
         
-        st.markdown(f"<h2 style='color: #5ECFA0;'>GANANCIA REAL: ${ganancia_neta:,.0f}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='color: #5ECFA0; text-shadow: 2px 2px 4px black;'>GANANCIA REAL: ${ganancia_neta:,.0f}</h2>", unsafe_allow_html=True)
     else:
         st.info("Aún no hay movimientos de caja en el día de hoy.")
