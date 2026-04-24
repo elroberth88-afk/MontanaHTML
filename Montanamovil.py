@@ -236,33 +236,88 @@ elif choice == "📦 Inventario":
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 4. CAJA HOY
+# 4. CAJA HOY - RANKING Y MÁRGENES
 # ==========================================
 elif choice == "🏧 Caja (Hoy)":
-    st.markdown("### Resumen de Caja (Solo Hoy)")
+    import plotly.express as px
+    
+    st.markdown("### Análisis de Rentabilidad (Hoy)")
     hoy = datetime.now().strftime("%Y-%m-%d")
     
     conn = get_connection()
-    df_hoy = pd.read_sql(f"SELECT metodo_pago, total, costo_total FROM ventas WHERE timestamp LIKE '{hoy}%'", conn)
+    df_hoy = pd.read_sql(f"SELECT producto_nombre, total, costo_total, cantidad FROM ventas WHERE timestamp LIKE '{hoy}%'", conn)
     conn.close()
 
     if not df_hoy.empty:
-        efectivo = df_hoy[df_hoy['metodo_pago'] == 'efectivo']['total'].sum()
-        transf = df_hoy[df_hoy['metodo_pago'] == 'transferencia']['total'].sum()
-        costo_total_dia = df_hoy['costo_total'].sum()
-        total_ingresos = efectivo + transf
-        ganancia_neta = total_ingresos - costo_total_dia
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Efectivo", f"${efectivo:,.0f}")
-        with col2:
-            st.metric("Transferencias", f"${transf:,.0f}")
-            
-        st.markdown("---")
-        st.metric("TOTAL VENTAS BRUTAS", f"${total_ingresos:,.0f}")
-        st.metric("Costo de Mercadería", f"- ${costo_total_dia:,.0f}")
+        # --- CÁLCULOS CLAVE ---
+        total_ventas = df_hoy['total'].sum()
+        total_costos = df_hoy['costo_total'].sum()
+        total_ganancia = total_ventas - total_costos
         
-        st.markdown(f"<h2 style='color: #5ECFA0;'>GANANCIA REAL: ${ganancia_neta:,.0f}</h2>", unsafe_allow_html=True)
+        # Columnas de métricas rápidas
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Ventas Brutas", f"${total_ventas:,.0f}")
+        c2.metric("Costo Mercadería", f"-${total_costos:,.0f}", delta_color="inverse")
+        c3.metric("Ganancia Neta", f"${total_ganancia:,.0f}")
+
+        st.markdown("---")
+
+        # --- DISTRIBUCIÓN DE COLUMNAS PARA GRÁFICOS ---
+        col_rank, col_margen = st.columns([1.2, 1]) # El ranking suele necesitar un poco más de ancho
+
+        with col_rank:
+            st.markdown("##### 🏆 ¿Qué es lo que más se vende?")
+            # Agrupamos por producto para el ranking
+            df_ranking = df_hoy.groupby('producto_nombre')['cantidad'].sum().reset_index().sort_values('cantidad', ascending=True)
+            
+            fig_rank = px.bar(
+                df_ranking, 
+                x='cantidad', 
+                y='producto_nombre',
+                orientation='h',
+                text='cantidad',
+                color_discrete_sequence=['#5ECFA0']
+            )
+            fig_rank.update_traces(textposition='outside')
+            fig_rank.update_layout(
+                margin=dict(l=0, r=40, t=10, b=10),
+                height=300,
+                xaxis_visible=False, # Limpiamos el eje X porque ya tenemos el texto en las barras
+                yaxis_title=None,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)'
+            )
+            st.plotly_chart(fig_rank, use_container_width=True, config={'displayModeBar': False})
+
+        with col_margen:
+            st.markdown("##### 📈 Margen de Ganancia")
+            # Datos para la torta
+            df_pie = pd.DataFrame({
+                "Tipo": ["Costo", "Ganancia"],
+                "Valor": [total_costos, total_ganancia]
+            })
+            
+            fig_pie = px.pie(
+                df_pie, 
+                values='Valor', 
+                names='Tipo',
+                hole=0.6, # Estilo "Donut" más moderno
+                color_discrete_map={"Costo": "#3B3B3B", "Ganancia": "#5ECFA0"}
+            )
+            fig_pie.update_traces(textinfo='percent')
+            fig_pie.update_layout(
+                margin=dict(l=20, r=20, t=10, b=10),
+                height=300,
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
+                paper_bgcolor='rgba(0,0,0,0)'
+            )
+            st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
+
+        # --- TIP DE NEGOCIO ---
+        if total_ventas > 0:
+            margen_p = (total_ganancia / total_ventas) * 100
+            st.info(f"💡 Por cada $1.000 vendidos hoy, te quedan **${int(margen_p * 10)}** de ganancia real.")
+
     else:
-        st.info("Aún no hay movimientos de caja en el día de hoy.")
+        st.info("Todavía no hay ventas registradas para hoy.")
