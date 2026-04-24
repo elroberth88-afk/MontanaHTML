@@ -119,7 +119,7 @@ try:
 except:
     st.sidebar.title("MONTANA CLUB")
 
-st.title("💲:green[Gestión] :grey[Montana Club] 💵"
+st.title("💲 :green[Gestión] :grey[Montana Club] 💵")
 
 menu = ["+ Nueva Venta", "💰 Historial Ventas", "📦 Inventario", "🏧 Caja (Hoy)"]
 choice = st.sidebar.radio("Navegación", menu)
